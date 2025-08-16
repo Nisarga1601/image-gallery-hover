@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Image Gallery with Hover Effects (HTML + CSS)</title>
+  <style>
+    :root{
+      --bg:#0b0f14;
+      --card:#0f1620;
+      --text:#e8eef5;
+      --muted:#9fb0c3;
+      --accent: #7cc2ff;
+      --radius: 18px;
+      --shadow: 0 12px 30px rgba(0,0,0,.35);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      color:var(--text);
+      background: radial-gradient(1200px 600px at 10% -10%, #122133 0%, transparent 60%),
+                  radial-gradient(1000px 700px at 110% 10%, #142035 0%, transparent 55%),
+                  var(--bg);
+    }
+
+    header{
+      max-width:1100px; margin:32px auto 16px; padding:0 16px;
+    }
+    h1{margin:0 0 6px; font-weight:800; letter-spacing:.3px}
+    p{margin:0; color:var(--muted)}
+
+    /* Controls */
+    .controls{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:14px}
+    .chip{
+      padding:8px 12px; border-radius:999px; background:#0e1a27; color:var(--muted);
+      border:1px solid #1b2a3d; cursor:pointer; transition:.25s ease; user-select:none;
+    }
+    .chip.active, .chip:hover{color:var(--text); border-color:#244562; box-shadow:inset 0 0 0 1px #244562}
+
+    main{max-width:1100px; margin:18px auto 60px; padding:0 16px}
+
+    /* Gallery grid */
+    .gallery{
+      display:grid; gap:18px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    /* Card base */
+    .card{
+      position:relative; overflow:hidden; border-radius:var(--radius);
+      background:var(--card); box-shadow:var(--shadow); isolation:isolate;
+      aspect-ratio: 4 / 3; /* keeps cards tidy */
+    }
+    .card img{ width:100%; height:100%; object-fit:cover; display:block; transition: transform .6s ease, filter .6s ease; filter: saturate(.9) contrast(1.05);
+    }
+    .card .overlay{
+      position:absolute; inset:0; display:flex; flex-direction:column; justify-content:flex-end;
+      background: linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(2,8,20,.72) 100%);
+      color:#fff; padding:14px; transition: opacity .4s ease, transform .4s ease;
+    }
+    .title{font-weight:700; letter-spacing:.2px}
+    .subtitle{font-size:.9rem; color:#d6e6ffcc}
+
+    /* Effect 1: Zoom + Fade caption */
+    .hover-zoom .overlay{opacity:0; transform: translateY(10px)}
+    .hover-zoom:hover img{ transform: scale(1.08)}
+    .hover-zoom:hover .overlay{ opacity:1; transform: translateY(0)}
+
+    /* Effect 2: Grayscale → Color + Lift */
+    .hover-grayscale img{ filter: grayscale(80%) brightness(.9)}
+    .hover-grayscale:hover img{ filter: none; transform: scale(1.05)}
+    .hover-grayscale{transition: transform .25s ease}
+    .hover-grayscale:hover{ transform: translateY(-6px)}
+
+    /* Effect 3: Slide-up Caption Bar */
+    .hover-slide .caption{
+      position:absolute; left:10px; right:10px; bottom:10px; backdrop-filter: blur(6px);
+      background: linear-gradient(180deg, rgba(124,194,255,.08), rgba(124,194,255,.18));
+      border:1px solid rgba(124,194,255,.25); border-radius:14px; padding:10px 12px;
+      transform: translateY(120%); transition: transform .35s ease;
+    }
+    .hover-slide:hover .caption{ transform: translateY(0)}
+
+    /* Effect 4: Unblur on Hover + Glow */
+    .hover-blur img{ filter: blur(2px) saturate(.8) brightness(.85)}
+    .hover-blur:hover img{ filter: none; transform: scale(1.04)}
+    .hover-blur::after{
+      content:""; position:absolute; inset:0; box-shadow: inset 0 0 0 0 rgba(124,194,255,.5);
+      transition: box-shadow .35s ease;
+    }
+    .hover-blur:hover::after{ box-shadow: inset 0 0 0 3px rgba(124,194,255,.45) }
+
+    /* Effect 5: Tilt on hover (subtle 3D) */
+    .hover-tilt{ perspective: 800px }
+    .hover-tilt img{ transform-origin: center; }
+    .hover-tilt:hover img{ transform: rotateX(6deg) rotateY(-6deg) scale(1.03) }
+
+    /* Effect 6: Border glow + zoom */
+    .hover-glow{ position:relative }
+    .hover-glow::before{
+      content:""; position:absolute; inset:-1px; border-radius:calc(var(--radius) + 2px);
+      background: conic-gradient(from 180deg at 50% 50%, #3aa0ff33, #8b5cf633, #22d3ee33, #3aa0ff33);
+      filter: blur(14px); opacity:0; transition: opacity .35s ease; z-index:-1
+    }
+    .hover-glow:hover::before{ opacity:1 }
+    .hover-glow:hover img{ transform: scale(1.06) }
+
+    /* Small footer */
+    footer{ max-width:1100px; margin:28px auto 60px; padding:0 16px; color:var(--muted); font-size:.95rem}
+    footer code{background:#0e1a27; padding:2px 6px; border-radius:6px; border:1px solid #1b2a3d}
+
+    /* Filter using data-effect */
+    .gallery[data-filter]:not([data-filter="all"]) .card{ display:none }
+    .gallery[data-filter="zoom"] .card.hover-zoom{ display:block }
+    .gallery[data-filter="gray"] .card.hover-grayscale{ display:block }
+    .gallery[data-filter="blur"] .card.hover-blur{ display:block }
+    .gallery[data-filter="tilt"] .card.hover-tilt{ display:block }
+    .gallery[data-filter="glow"] .card.hover-glow{ display:block }
+
+    @media (prefers-reduced-motion: reduce){
+      *{transition:none !important}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Image Gallery with Hover Effects</h1>
+
+    <div class="controls" role="group" aria-label="Filter effects">
+      <button class="chip active" data-filter="all">All</button>
+      <button class="chip" data-filter="zoom">Zoom + Fade</button>
+      <button class="chip" data-filter="gray">Grayscale → Color</button>
+      <button class="chip" data-filter="blur">Unblur + Glow</button>
+      <button class="chip" data-filter="tilt">3D Tilt</button>
+      <button class="chip" data-filter="glow">Border Glow</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="gallery" id="gallery" data-filter="all">
+      <!-- Effect 1 -->
+      <figure class="card hover-zoom">
+        <img loading="lazy" src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=1600&auto=format&fit=crop" alt="Mountain landscape at golden hour"/>
+        <figcaption class="overlay">
+          <div class="title">Alpine Glow</div>
+          <div class="subtitle">Zoom + Fade caption</div>
+        </figcaption>
+      </figure>
+
+      <!-- Effect 2 -->
+      <figure class="card hover-grayscale">
+        <img loading="lazy" src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop" alt="City street with neon lights at night"/>
+        <figcaption class="overlay">
+          <div class="title">Neon Alley</div>
+          <div class="subtitle">Grayscale → Color + Lift</div>
+        </figcaption>
+      </figure>
+
+      <!-- Effect 3 -->
+      <figure class="card hover-slide">
+        <img loading="lazy" src="https://images.unsplash.com/photo-1482192596544-9eb780fc7f66?q=80&w=1600&auto=format&fit=crop" alt="Books stacked in a cozy library"/>
+        <figcaption class="caption">
+          <div class="title">Quiet Stacks</div>
+          <div class="subtitle">Slide-up glass caption</div>
+        </figcaption>
+      </figure>
+
+      <!-- Effect 4 -->
+      <figure class="card hover-blur">
+        <img loading="lazy" src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=1600&auto=format&fit=crop" alt="Forest with sunlight rays"/>
+        <figcaption class="overlay">
+          <div class="title">Forest Light</div>
+          <div class="subtitle">Unblur on hover + Glow</div>
+        </figcaption>
+      </figure>
+
+      <!-- Effect 5 -->
+      <figure class="card hover-tilt">
+        <img loading="lazy" src="https://images.unsplash.com/photo-1491553895911-0055eca6402d?q=80&w=1600&auto=format&fit=crop" alt="Vintage car parked near palm trees"/>
+        <figcaption class="overlay">
+          <div class="title">Retro Cruise</div>
+          <div class="subtitle">Subtle 3D tilt</div>
+        </figcaption>
+      </figure>
+
+      <!-- Effect 6 -->
+      <figure class="card hover-glow">
+        <img loading="lazy" src="https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?q=80&w=1600&auto=format&fit=crop" alt="Desert dunes under clear sky"/>
+        <figcaption class="overlay">
+          <div class="title">Sand Waves</div>
+          <div class="subtitle">Border glow + zoom</div>
+        </figcaption>
+      </figure>
+
+      <!-- More examples repeating styles for layout fullness -->
+      <figure class="card hover-zoom">
+        <img loading="lazy" src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1600&auto=format&fit=crop" alt="Ocean wave curling"/>
+        <figcaption class="overlay">
+          <div class="title">Blue Curl</div>
+          <div class="subtitle">Zoom + Fade caption</div>
+        </figcaption>
+      </figure>
+
+      <figure class="card hover-grayscale">
+        <img loading="lazy" src="https://images.unsplash.com/photo-1508057198894-247b23fe5ade?q=80&w=1600&auto=format&fit=crop" alt="Plate of pancakes with berries"/>
+        <figcaption class="overlay">
+          <div class="title">Sunday Stack</div>
+          <div class="subtitle">Grayscale → Color + Lift</div>
+        </figcaption>
+      </figure>
+
+      
+      <figure class="card hover-blur">
+        <img loading="lazy" src="https://images.unsplash.com/photo-1472214103451-9374bd1c798e?q=80&w=1600&auto=format&fit=crop" alt="Cup of coffee on a wooden table"/>
+        <figcaption class="overlay">
+          <div class="title">Morning Brew</div>
+          <div class="subtitle">Unblur on hover + Glow</div>
+        </figcaption>
+      </figure>
+
+      <figure class="card hover-tilt">
+        <img loading="lazy" src="https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=1600&auto=format&fit=crop" alt="Person hiking in the mountains"/>
+        <figcaption class="overlay">
+          <div class="title">Trail Days</div>
+          <div class="subtitle">Subtle 3D tilt</div>
+        </figcaption>
+      </figure>
+
+      <figure class="card hover-glow">
+        <img loading="lazy" src="https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=1600&auto=format&fit=crop" alt="Astronaut in space art"/>
+        <figcaption class="overlay">
+          <div class="title">Beyond</div>
+          <div class="subtitle">Border glow + zoom</div>
+        </figcaption>
+      </figure>
+
+    </section>
+  </main>
+
+ 
+
+  <script>
+    // Tiny JS just for demo filtering; gallery effects are all CSS-only
+    const gallery = document.getElementById('gallery');
+    const chips = document.querySelectorAll('.chip');
+    chips.forEach(ch => ch.addEventListener('click', () => {
+      chips.forEach(c => c.classList.remove('active'));
+      ch.classList.add('active');
+      gallery.setAttribute('data-filter', ch.dataset.filter);
+    }));
+  </script>
+</body>
+</html>
